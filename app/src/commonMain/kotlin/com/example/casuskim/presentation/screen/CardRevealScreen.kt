@@ -15,6 +15,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.casuskim.data.local.GameState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 
 class CardRevealScreen : Screen {
     @Composable
@@ -39,12 +46,19 @@ class CardRevealScreen : Screen {
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Sıra: ${currentPlayer.name}",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            AnimatedContent(
+                targetState = currentPlayer.name,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                }
+            ) {
+                Text(
+                    text = "Sıra: $it",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -56,6 +70,11 @@ class CardRevealScreen : Screen {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val targetCardColor = if (isRevealed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+            val animatedCardColor by animateColorAsState(
+                targetValue = targetCardColor,
+                animationSpec = tween(durationMillis = 300)
+            )
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -70,26 +89,28 @@ class CardRevealScreen : Screen {
                         }
                     },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isRevealed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = animatedCardColor
                 )
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isRevealed) {
-                        Text(
-                            text = if (currentPlayer.isSpy) "CASUS" else (currentPlayer.assignedWord ?: ""),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    } else {
-                        Text(
-                            text = "Kart Kapalı",
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Crossfade(targetState = isRevealed, animationSpec = tween(durationMillis = 300)) { revealed ->
+                        if (revealed) {
+                            Text(
+                                text = if (currentPlayer.isSpy) "CASUS" else (currentPlayer.assignedWord ?: ""),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        } else {
+                            Text(
+                                text = "Kart Kapalı",
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

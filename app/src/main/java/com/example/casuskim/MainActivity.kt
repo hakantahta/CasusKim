@@ -18,6 +18,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+import com.example.casuskim.R
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun CasusKimApp() {
-    Navigator(HomeScreen()) { navigator ->
+    Navigator(HomeScreen(imageResId = R.drawable.casus_logo)) { navigator ->
         SlideTransition(navigator)
     }
 }

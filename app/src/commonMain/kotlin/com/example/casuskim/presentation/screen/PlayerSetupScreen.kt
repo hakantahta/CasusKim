@@ -46,7 +46,7 @@ class PlayerSetupScreen : Screen {
                 .padding(24.dp)
         ) {
             Text(
-                text = "Oyuncu Kurulumu",
+                text = "Oyuncu Ekleme",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
