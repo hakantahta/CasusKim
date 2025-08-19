@@ -20,6 +20,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.casuskim.domain.model.Player
 import com.example.casuskim.presentation.screen.GameScreen
+import com.example.casuskim.presentation.screen.CardRevealScreen
+import com.example.casuskim.data.local.GameState
 import com.example.casuskim.presentation.util.toColor
 import kotlinx.datetime.Clock
 
@@ -27,9 +29,9 @@ class PlayerSetupScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        var players by remember { mutableStateOf(listOf<Player>()) }
+        var players by remember { mutableStateOf(GameState.players) }
         var newPlayerName by remember { mutableStateOf("") }
-        var gameDuration by remember { mutableStateOf(30) }
+        var gameDuration by remember { mutableStateOf(GameState.gameDurationMinutes) }
         
         val playerColors = remember {
             listOf(
@@ -152,10 +154,14 @@ class PlayerSetupScreen : Screen {
             
             Spacer(modifier = Modifier.height(24.dp))
             
-                            Button(
+            Button(
                     onClick = { 
                         if (players.isNotEmpty()) {
-                            navigator.push(GameScreen())
+                            GameState.setPlayers(players)
+                            GameState.setGameDuration(gameDuration)
+                            GameState.clearRoundAssignments()
+                            GameState.assignSpyAndWord()
+                            navigator.push(CardRevealScreen())
                         }
                     },
                     enabled = players.isNotEmpty(),

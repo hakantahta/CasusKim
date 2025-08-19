@@ -2,15 +2,16 @@ package com.example.casuskim.domain.usecase
 
 import com.example.casuskim.domain.model.GameSession
 import com.example.casuskim.domain.model.GameResult
-import com.example.casuskim.domain.model.PlayerTask
+import com.example.casuskim.domain.model.Player
 import com.example.casuskim.domain.repository.GameRepository
-import com.example.casuskim.domain.repository.TaskRepository
+import com.example.casuskim.domain.repository.WordRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
+import kotlin.random.Random
 
 class GameUseCase(
     private val gameRepository: GameRepository,
-    private val taskRepository: TaskRepository
+    private val wordRepository: WordRepository
 ) {
     suspend fun createGameSession(session: GameSession): String {
         return gameRepository.createGameSession(session)
@@ -24,41 +25,33 @@ class GameUseCase(
         gameRepository.endGameSession(sessionId, endTime)
     }
     
-    suspend fun assignTasksToPlayers(
+    suspend fun assignSpyAndWords(
         sessionId: String,
-        players: List<String>,
-        categoryIds: List<String>,
-        tasksPerPlayer: Int
+        players: List<Player>,
+        categoryId: String
     ) {
-        val tasks = taskRepository.getRandomTasksByCategories(categoryIds, players.size * tasksPerPlayer)
-        val playerTasks = mutableListOf<PlayerTask>()
-        
-        players.forEachIndexed { index, playerId ->
-            val startIndex = index * tasksPerPlayer
-            val endIndex = minOf(startIndex + tasksPerPlayer, tasks.size)
-            
-            for (i in startIndex until endIndex) {
-                playerTasks.add(
-                    PlayerTask(
-                        playerId = playerId,
-                        taskId = tasks[i].id,
-                        assignedAt = Clock.System.now().toEpochMilliseconds()
-                    )
+        val word = wordRepository.getRandomWordByCategory(categoryId)
+        if (word != null) {
+            // Rastgele bir oyuncuyu casus yap
+            val spyIndex = Random.nextInt(players.size)
+            val updatedPlayers = players.mapIndexed { index, player ->
+                player.copy(
+                    isSpy = index == spyIndex,
+                    assignedWord = if (index == spyIndex) "CASUS" else word.word
                 )
             }
-        }
-        
-        playerTasks.forEach { playerTask ->
-            gameRepository.assignTaskToPlayer(playerTask)
+            
+            // Oyuncuları güncelle
+            gameRepository.assignSpyAndWords(sessionId, updatedPlayers.map { it.id }, word.word)
         }
     }
     
-    suspend fun completeTask(playerId: String, taskId: String) {
-        gameRepository.completeTask(playerId, taskId, Clock.System.now().toEpochMilliseconds())
+    suspend fun getCurrentPlayer(sessionId: String): String? {
+        return gameRepository.getCurrentPlayer(sessionId)
     }
     
-    suspend fun getPlayerTasks(sessionId: String): Flow<List<PlayerTask>> {
-        return gameRepository.getPlayerTasks(sessionId)
+    suspend fun moveToNextPlayer(sessionId: String) {
+        gameRepository.moveToNextPlayer(sessionId)
     }
     
     suspend fun saveGameResult(result: GameResult) {

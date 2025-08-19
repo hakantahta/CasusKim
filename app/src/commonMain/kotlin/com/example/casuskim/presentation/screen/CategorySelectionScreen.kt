@@ -17,23 +17,23 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.casuskim.domain.model.Category
 import com.example.casuskim.presentation.screen.PlayerSetupScreen
+import com.example.casuskim.data.local.GameState
 
 class CategorySelectionScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         var selectedCategories by remember { mutableStateOf(setOf<String>()) }
-        var isMixedCategories by remember { mutableStateOf(false) }
         
         // Örnek kategoriler (gerçek uygulamada repository'den gelecek)
         val categories = remember {
             listOf(
-                Category("1", "Spor", "Fiziksel aktiviteler", "🏃‍♂️"),
-                Category("2", "Sanat", "Yaratıcı görevler", "🎨"),
-                Category("3", "Bilim", "Bilimsel deneyler", "🔬"),
-                Category("4", "Müzik", "Müzikle ilgili görevler", "🎵"),
-                Category("5", "Yemek", "Mutfak görevleri", "🍳"),
-                Category("6", "Doğa", "Doğa aktiviteleri", "🌿")
+                Category("1", "Spor", "Futbol, basketbol, yüzme gibi sporlar", "⚽"),
+                Category("2", "Yemek", "Pizza, hamburger, makarna gibi yemekler", "🍕"),
+                Category("3", "Meslek", "Doktor, öğretmen, mühendis gibi meslekler", "👨‍⚕️"),
+                Category("4", "Hayvan", "Kedi, köpek, aslan gibi hayvanlar", "🐱"),
+                Category("5", "Ülke", "Türkiye, İtalya, Japonya gibi ülkeler", "🇹🇷"),
+                Category("6", "Renk", "Kırmızı, mavi, yeşil gibi renkler", "🎨")
             )
         }
         
@@ -52,70 +52,49 @@ class CategorySelectionScreen : Screen {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Oyun için kategorileri seçin veya tüm kategorileri karıştırın",
+                text = "Oyun için bir kategori seçin",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Karışık kategoriler seçeneği
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
             ) {
-                Checkbox(
-                    checked = isMixedCategories,
-                    onCheckedChange = { 
-                        isMixedCategories = it
-                        if (it) selectedCategories = emptySet()
-                    }
-                )
-                Text(
-                    text = "Tüm kategorileri karıştır",
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            if (!isMixedCategories) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(categories) { category ->
-                        CategoryCard(
-                            category = category,
-                            isSelected = selectedCategories.contains(category.id),
-                            onSelectionChanged = { isSelected ->
-                                selectedCategories = if (isSelected) {
-                                    selectedCategories + category.id
-                                } else {
-                                    selectedCategories - category.id
-                                }
+                items(categories) { category ->
+                    CategoryCard(
+                        category = category,
+                        isSelected = selectedCategories.contains(category.id),
+                        onSelectionChanged = { isSelected ->
+                            selectedCategories = if (isSelected) {
+                                setOf(category.id) // Sadece bir kategori seçilebilir
+                            } else {
+                                emptySet()
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-                            Button(
-                    onClick = { 
-                        if (isMixedCategories || selectedCategories.isNotEmpty()) {
-                            navigator.push(PlayerSetupScreen())
-                        }
-                    },
-                    enabled = isMixedCategories || selectedCategories.isNotEmpty(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                ) {
+            Button(
+                onClick = { 
+                    if (selectedCategories.isNotEmpty()) {
+                        val chosen = selectedCategories.first()
+                        GameState.setCategory(chosen)
+                        navigator.push(PlayerSetupScreen())
+                    }
+                },
+                enabled = selectedCategories.isNotEmpty(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
                 Text(
                     text = "Devam Et",
                     fontSize = 18.sp,

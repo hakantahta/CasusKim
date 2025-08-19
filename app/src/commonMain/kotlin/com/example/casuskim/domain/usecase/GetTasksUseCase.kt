@@ -1,17 +1,17 @@
 package com.example.casuskim.domain.usecase
 
-import com.example.casuskim.domain.model.Task
-import com.example.casuskim.domain.repository.TaskRepository
+import com.example.casuskim.domain.model.Word
+import com.example.casuskim.domain.repository.WordRepository
 import kotlinx.coroutines.flow.Flow
 
-class GetTasksUseCase(
-    private val taskRepository: TaskRepository
+class GetWordsUseCase(
+    private val wordRepository: WordRepository
 ) {
-    fun getTasksByCategory(categoryId: String): Flow<List<Task>> {
-        return taskRepository.getTasksByCategory(categoryId)
+    fun getWordsByCategory(categoryId: String): Flow<List<Word>> {
+        return wordRepository.getWordsByCategory(categoryId)
     }
     
-    suspend fun getRandomTasksByCategories(categoryIds: List<String>, count: Int): List<Task> {
-        return taskRepository.getRandomTasksByCategories(categoryIds, count)
+    suspend fun getRandomWordByCategory(categoryId: String): Word? {
+        return wordRepository.getRandomWordByCategory(categoryId)
     }
 }

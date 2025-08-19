@@ -19,6 +19,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.example.casuskim.domain.model.Player
+import com.example.casuskim.data.local.GameState
 import com.example.casuskim.presentation.screen.HomeScreen
 import com.example.casuskim.presentation.screen.CategorySelectionScreen
 import com.example.casuskim.presentation.util.toColor
@@ -28,22 +29,11 @@ class GameResultScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         
-        // Örnek oyun sonuçları
-        val players = remember {
-            listOf(
-                Player("1", "Ahmet", "#FF6B6B"),
-                Player("2", "Ayşe", "#4ECDC4"),
-                Player("3", "Mehmet", "#45B7D1")
-            )
-        }
+        val players = GameState.players
         
-        val playerResults = remember {
-            listOf(
-                PlayerResult("1", "Ahmet", 5, "#FF6B6B"),
-                PlayerResult("2", "Ayşe", 3, "#4ECDC4"),
-                PlayerResult("3", "Mehmet", 4, "#45B7D1")
-            ).sortedByDescending { it.completedTasks }
-        }
+        val spyPlayer = players.find { it.isSpy }
+        val spyFinding = remember { GameState.computeSpyFinding() }
+        val spyWasFound = spyFinding.spyWasFound
         
         Column(
             modifier = Modifier
@@ -74,93 +64,133 @@ class GameResultScreen : Screen {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Toplam süre: 25 dakika",
+                    text = "Toplam süre: ${GameState.gameDurationMinutes} dakika",
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // Kazanan
-            if (playerResults.isNotEmpty()) {
-                val winner = playerResults.first()
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "🏆 KAZANAN 🏆",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                                        .background(
-                            color = winner.color.toColor(),
-                            shape = androidx.compose.foundation.shape.CircleShape
-                        ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = winner.name.firstOrNull()?.uppercase() ?: "",
-                                color = androidx.compose.ui.graphics.Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text(
-                            text = winner.name,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        
-                        Text(
-                            text = "${winner.completedTasks} görev tamamladı",
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Sıralama
-            Text(
-                text = "Sıralama",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(playerResults) { playerResult ->
-                    PlayerResultCard(
-                        playerResult = playerResult,
-                        rank = playerResults.indexOf(playerResult) + 1
-                    )
-                }
-            }
+
+                         // Oyun sonucu
+             if (spyPlayer != null) {
+                 Card(
+                     modifier = Modifier.fillMaxWidth(),
+                     colors = CardDefaults.cardColors(
+                         containerColor = if (spyWasFound) {
+                             MaterialTheme.colorScheme.primaryContainer
+                         } else {
+                             MaterialTheme.colorScheme.errorContainer
+                         }
+                     )
+                 ) {
+                     Column(
+                         modifier = Modifier.padding(24.dp),
+                         horizontalAlignment = Alignment.CenterHorizontally
+                     ) {
+                         Text(
+                             text = if (spyWasFound) "🎯 CASUS YAKALANDI! 🎯" else "🎭 CASUS KAZANDI! 🎭",
+                             fontSize = 18.sp,
+                             fontWeight = FontWeight.Bold,
+                             color = if (spyWasFound) {
+                                 MaterialTheme.colorScheme.onPrimaryContainer
+                             } else {
+                                 MaterialTheme.colorScheme.onErrorContainer
+                             }
+                         )
+                         
+                         Spacer(modifier = Modifier.height(16.dp))
+                         
+                         Box(
+                             modifier = Modifier
+                                 .size(80.dp)
+                                 .background(
+                                     color = spyPlayer.color.toColor(),
+                                     shape = androidx.compose.foundation.shape.CircleShape
+                                 ),
+                             contentAlignment = Alignment.Center
+                         ) {
+                             Text(
+                                 text = spyPlayer.name.firstOrNull()?.uppercase() ?: "",
+                                 color = androidx.compose.ui.graphics.Color.White,
+                                 fontWeight = FontWeight.Bold,
+                                 fontSize = 24.sp
+                             )
+                         }
+                         
+                         Spacer(modifier = Modifier.height(16.dp))
+                         
+                         Text(
+                             text = spyPlayer.name,
+                             fontSize = 24.sp,
+                             fontWeight = FontWeight.Bold,
+                             color = if (spyWasFound) {
+                                 MaterialTheme.colorScheme.onPrimaryContainer
+                             } else {
+                                 MaterialTheme.colorScheme.onErrorContainer
+                             }
+                         )
+                         
+                         Text(
+                             text = if (spyWasFound) "Casus yakalandı!" else "Casus gizlendi!",
+                             fontSize = 16.sp,
+                             color = if (spyWasFound) {
+                                 MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                             } else {
+                                 MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+                             }
+                         )
+                     }
+                 }
+             }
+             
+             Spacer(modifier = Modifier.height(24.dp))
+             
+             // Oy birikimi özeti
+             val voteCounts = remember { GameState.getVoteCounts() }
+             if (voteCounts.isNotEmpty()) {
+                 Spacer(modifier = Modifier.height(8.dp))
+                 Card(
+                     modifier = Modifier.fillMaxWidth()
+                 ) {
+                     Column(modifier = Modifier.padding(16.dp)) {
+                         Text("Oy Dökümü", fontWeight = FontWeight.SemiBold)
+                         Spacer(modifier = Modifier.height(8.dp))
+                         players.forEach { p ->
+                             Row(
+                                 modifier = Modifier.fillMaxWidth(),
+                                 horizontalArrangement = Arrangement.SpaceBetween
+                             ) {
+                                 Text(p.name)
+                                 Text("${voteCounts[p.id] ?: 0} oy")
+                             }
+                         }
+                     }
+                 }
+             }
+
+             Spacer(modifier = Modifier.height(16.dp))
+
+             // Oyuncu listesi
+             Text(
+                 text = "Oyuncular",
+                 fontSize = 18.sp,
+                 fontWeight = FontWeight.Medium
+             )
+             
+             Spacer(modifier = Modifier.height(8.dp))
+             
+             LazyColumn(
+                 modifier = Modifier.weight(1f),
+                 verticalArrangement = Arrangement.spacedBy(8.dp)
+             ) {
+                  items(players) { player ->
+                     PlayerResultCard(
+                         player = player,
+                         isSpy = player.isSpy,
+                         word = player.assignedWord
+                     )
+                 }
+             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -179,7 +209,12 @@ class GameResultScreen : Screen {
                 }
                 
                 Button(
-                    onClick = { navigator.push(CategorySelectionScreen()) },
+                    onClick = {
+                        // Aynı oyuncular kalsın, sadece yeni kelime ve casus ata
+                        GameState.clearRoundAssignments()
+                        GameState.assignSpyAndWord()
+                        navigator.push(CardRevealScreen())
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null)
@@ -191,17 +226,11 @@ class GameResultScreen : Screen {
     }
 }
 
-data class PlayerResult(
-    val id: String,
-    val name: String,
-    val completedTasks: Int,
-    val color: String
-)
-
 @Composable
 private fun PlayerResultCard(
-    playerResult: PlayerResult,
-    rank: Int
+    player: Player,
+    isSpy: Boolean,
+    word: String?
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -212,46 +241,18 @@ private fun PlayerResultCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Sıralama
+            // Oyuncu avatar
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = when (rank) {
-                            1 -> MaterialTheme.colorScheme.primary
-                            2 -> MaterialTheme.colorScheme.secondary
-                            3 -> MaterialTheme.colorScheme.tertiary
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        },
+                        color = player.color.toColor(),
                         shape = androidx.compose.foundation.shape.CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = rank.toString(),
-                    color = if (rank <= 3) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Oyuncu avatar
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                                            .background(
-                            color = playerResult.color.toColor(),
-                            shape = androidx.compose.foundation.shape.CircleShape
-                        ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = playerResult.name.firstOrNull()?.uppercase() ?: "",
+                    text = player.name.firstOrNull()?.uppercase() ?: "",
                     color = androidx.compose.ui.graphics.Color.White,
                     fontWeight = FontWeight.Bold
                 )
@@ -262,24 +263,33 @@ private fun PlayerResultCard(
             // Oyuncu bilgileri
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = playerResult.name,
+                    text = player.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 
-                Text(
-                    text = "${playerResult.completedTasks} görev tamamladı",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (isSpy) {
+                    Text(
+                        text = "🎭 Casus",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        text = "Kelime: ${word ?: "-"}",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             
-            // Ödül ikonu
-            if (rank == 1) {
+            // Casus ikonu
+            if (isSpy) {
                 Icon(
                     Icons.Default.Star,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
