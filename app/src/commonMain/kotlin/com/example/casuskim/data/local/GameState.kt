@@ -10,7 +10,7 @@ object GameState {
     var selectedCategoryId: String? = null
         private set
 
-    var gameDurationMinutes: Int = 30
+    var gameDurationMinutes: Int = 15
         private set
 
     var wordForRound: String? = null
