@@ -16,6 +16,9 @@ object GameState {
     var wordForRound: String? = null
         private set
 
+    // Önceki kelimeyi hatırlamak için
+    private var previousWord: String? = null
+
     // Oylar: voterId -> targetPlayerId
     var votes: MutableMap<String, String> = mutableMapOf()
         private set
@@ -26,6 +29,8 @@ object GameState {
 
     fun setCategory(categoryId: String) {
         selectedCategoryId = categoryId
+        // Kategori değiştiğinde önceki kelimeyi sıfırla
+        previousWord = null
     }
 
     fun setGameDuration(minutes: Int) {
@@ -38,6 +43,7 @@ object GameState {
         val spyIndex = Random.nextInt(players.size)
         val chosenWord = pickRandomWord(selectedCategoryId!!)
         wordForRound = chosenWord
+        previousWord = chosenWord
 
         players = players.mapIndexed { index, player ->
             player.copy(
@@ -63,7 +69,15 @@ object GameState {
             "6" -> listOf("Kırmızı", "Mavi", "Yeşil", "Sarı") // Renk
             else -> listOf("Elma", "Deniz", "Güneş", "Kitap")
         }
-        return words.random()
+        
+        // Eğer sadece bir kelime varsa veya önceki kelime yoksa rastgele seç
+        if (words.size <= 1 || previousWord == null) {
+            return words.random()
+        }
+        
+        // Önceki kelimeyi hariç tutarak yeni kelime seç
+        val availableWords = words.filter { it != previousWord }
+        return availableWords.random()
     }
 
     fun clearVotes() {
